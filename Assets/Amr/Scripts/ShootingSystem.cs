@@ -6,6 +6,7 @@ public class ShootingSystem : MonoBehaviour
     public GameObject bulletPrefab;
     public Transform firePoint;
     public float bulletForce = 20f;
+    public float bulletLifeTime = 5f;
 
     [Header("Ammo Settings")]
     public int maxAmmo = 2;
@@ -24,17 +25,18 @@ public class ShootingSystem : MonoBehaviour
     void Start()
     {
         currentAmmo = maxAmmo;
+
+        if (muzzleFlash != null)
+            muzzleFlash.gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // Shoot
         if (Input.GetMouseButtonDown(0))
         {
             Shoot();
         }
 
-        // Reload
         if (Input.GetKeyDown(KeyCode.R))
         {
             TryReload();
@@ -43,7 +45,6 @@ public class ShootingSystem : MonoBehaviour
 
     void Shoot()
     {
-        // Block shooting while reloading
         if (isReloading) return;
 
         if (currentAmmo > 0)
@@ -59,8 +60,14 @@ public class ShootingSystem : MonoBehaviour
             Rigidbody rb = bullet.GetComponent<Rigidbody>();
             rb.AddForce(firePoint.forward * bulletForce, ForceMode.Impulse);
 
+            Destroy(bullet, bulletLifeTime);
+
             if (muzzleFlash != null)
+            {
+                muzzleFlash.gameObject.SetActive(true);
                 muzzleFlash.Play();
+                StartCoroutine(DisableMuzzleFlash());
+            }
 
             audioSource.PlayOneShot(shootSound);
         }
@@ -86,10 +93,15 @@ public class ShootingSystem : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        // Shoot sound only (no bullet, no effect)
-        audioSource.PlayOneShot(shootSound);
-
         currentAmmo = maxAmmo;
         isReloading = false;
+    }
+
+    IEnumerator DisableMuzzleFlash()
+    {
+        yield return new WaitForSeconds(0.1f);
+
+        if (muzzleFlash != null)
+            muzzleFlash.gameObject.SetActive(false);
     }
 }
