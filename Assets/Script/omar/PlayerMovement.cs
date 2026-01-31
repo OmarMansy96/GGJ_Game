@@ -9,7 +9,7 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 5;
     public float gravity = 9.8f;
 
-
+    [SerializeField] private Mask mask;
 
     public PlayerInputManager inputManager;
     CharacterController controller;
@@ -20,11 +20,11 @@ public class PlayerMovement : MonoBehaviour
 
 
     private Health health;
-    private Shield shield;
+  
     private void Awake()
     {
         if (!health) health = GetComponent<Health>();
-        if (!shield) shield = GetComponent<Shield>();
+        
         controller = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
 
@@ -78,15 +78,29 @@ public class PlayerMovement : MonoBehaviour
 
 
 
+
+
     public void Hit(int damage)
     {
         int leftover = damage;
 
-        if (shield != null)
-            leftover = shield.Absorb(damage);
+        if (mask != null && mask.gameObject.activeSelf)
+            mask.TakeDamage(ref leftover);
 
         if (leftover > 0)
             health.TakeDamage(leftover);
+    }
+
+
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Mask"))
+        {
+            mask.Equip();
+            Destroy(collision.gameObject);
+            Debug.Log("Mask Equipped"); 
+        }
     }
 }
 

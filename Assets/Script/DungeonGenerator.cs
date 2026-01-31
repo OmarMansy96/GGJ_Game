@@ -88,6 +88,7 @@ public class DungeonGenerator : MonoBehaviour
         }
         if (surface != null) surface.BuildNavMesh();
         GetComponent<ZombieSpawner>().SpawnInOnlyThreeRooms();
+        GetComponent<MaskSpawner>()?.SpawnMasks();
     }
 
     void Cleanup()
