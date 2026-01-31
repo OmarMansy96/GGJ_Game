@@ -17,8 +17,14 @@ public class PlayerMovement : MonoBehaviour
     Vector3 currentMovement;
     Vector3 currentRotation;
 
+
+
+    private Health health;
+    private Shield shield;
     private void Awake()
     {
+        if (!health) health = GetComponent<Health>();
+        if (!shield) shield = GetComponent<Shield>();
         controller = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
 
@@ -70,6 +76,18 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+
+
+    public void Hit(int damage)
+    {
+        int leftover = damage;
+
+        if (shield != null)
+            leftover = shield.Absorb(damage);
+
+        if (leftover > 0)
+            health.TakeDamage(leftover);
+    }
 }
 
 
