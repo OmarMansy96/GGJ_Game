@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections;
+using System;
 
 public class UIManager : MonoBehaviour
 {
@@ -7,34 +10,40 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject loseMenu;
     [SerializeField] private GameObject pauseMenu;
 
+    public float fadeInTime;
+    public string GameName;
+    public GameObject fadeIn;
     void Start()
     {
-        ShowStartMenu();
+        // ShowStartMenu();
     }
     public void ShowStartMenu()
+    {
+        fadeIn.GetComponent<Animator>().Play("New Animation");
+        Invoke("SceneTrans", fadeInTime);
+    }
+    public void SceneTrans()
+    {
+        SceneManager.LoadScene(GameName);
+    }
+    public void StartGame()
     {
         startMenu.SetActive(true);
         gameUI.SetActive(false);
         loseMenu.SetActive(false);
         pauseMenu.SetActive(false);
-        Time.timeScale = 0f; 
+        Time.timeScale = 0f;
     }
 
-
-    public void StartGame()
-    {
-        startMenu.SetActive(false);
-        gameUI.SetActive(true);
-        Time.timeScale = 1f; 
-    }
     public void ShowLoseMenu()
     {
         loseMenu.SetActive(true);
         gameUI.SetActive(false);
         Time.timeScale = 0f;
     }
-    public void ShowPauseMenu() { 
-        
+    public void ShowPauseMenu()
+    {
+
         pauseMenu.SetActive(true);
         gameUI.SetActive(false);
         Time.timeScale = 0f;
