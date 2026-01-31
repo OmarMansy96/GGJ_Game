@@ -3,7 +3,12 @@ guid: 1bd5223e0fa9cff4dbddcd1208da1359
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tmpb6bhlrgz_obj
+    second: {fileID: 2100000, guid: f8b766dea7474274fa4dfacca605572a, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -80,7 +85,12 @@ ModelImporter:
   humanDescription:
     serializedVersion: 3
     human: []
-    skeleton: []
+    skeleton:
+    - name: woman(Clone)
+      parentName: 
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.000000037748947, y: 0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
     armTwist: 0.5
     foreArmTwist: 0.5
     upperLegTwist: 0.5
