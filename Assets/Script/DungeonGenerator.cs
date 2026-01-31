@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.AI.Navigation;
 using UnityEngine;
 
 public enum RoomType { Spawn, Loot, Key, Locked, Gate, Trap, Empty }
@@ -7,6 +8,8 @@ public enum DoorState { Wall, Open, Locked }
 
 public class DungeonGenerator : MonoBehaviour
 {
+
+    [SerializeField] private NavMeshSurface surface;
     public int gridWidth = 25, gridHeight = 25;
     public Vector2Int startPos = new Vector2Int(12, 12); // Center of default 25x25 grid
     public int maxRooms = 40, roomSize = 10;
@@ -22,7 +25,7 @@ public class DungeonGenerator : MonoBehaviour
     public int keyLockedPairPercent = 16; // 8/50 = 16% (4 keys + 4 locked)
 
     private HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
-    private List<Vector2Int> visitOrder = new List<Vector2Int>();
+    public List<Vector2Int> visitOrder = new List<Vector2Int>();
     public Dictionary<Vector2Int, GameObject> spawnedRooms = new Dictionary<Vector2Int, GameObject>();
 
     void Start()
@@ -35,6 +38,7 @@ public class DungeonGenerator : MonoBehaviour
     //[ContextMenu("Generate Dungeon (Editor generation cuz my dumbass is dum)")]
     public void Generate()
     {
+        if (surface == null) surface = GetComponent<NavMeshSurface>();
         // cleanup old rooms
         Cleanup();
 
@@ -82,6 +86,8 @@ public class DungeonGenerator : MonoBehaviour
             TrySetDoorPair(kv.Key, Vector2Int.left, Direction.Left, room);
             TrySetDoorPair(kv.Key, Vector2Int.right, Direction.Right, room);
         }
+        if (surface != null) surface.BuildNavMesh();
+        GetComponent<ZombieSpawner>().SpawnInOnlyThreeRooms();
     }
 
     void Cleanup()
