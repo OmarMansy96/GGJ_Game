@@ -977,15 +977,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_LocalScale.x
-      value: 100
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_LocalScale.y
-      value: 100
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_LocalScale.z
-      value: 100
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1033,7 +1033,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_Controller
@@ -1041,13 +1041,7 @@ PrefabInstance:
       objectReference: {fileID: 9100000, guid: d565bf4d5a9e50046974a2b95e1923b1, type: 2}
     - target: {fileID: 5866666021909216657, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_WarningMessage
-      value: "\nBinding warning: Some generic clip(s) animate transforms that are
-        already bound by a Humanoid avatar. These transforms can only be changed
-        by Humanoid clips.\n\tTransform 'mixamorig:Hips'\n\tTransform 'mixamorig:LeftFoot'\n\tTransform
-        'mixamorig:Spine1'\n\tTransform 'mixamorig:LeftToeBase'\n\tTransform 'mixamorig:RightArm'\n\tTransform
-        'mixamorig:LeftLeg'\n\tTransform 'mixamorig:LeftShoulder'\n\tTransform 'mixamorig:RightFoot'\n\tTransform
-        'mixamorig:Head'\n\tTransform 'mixamorig:LeftUpLeg'\n\tand more ...\n\tFrom
-        animation clip 'mixamo.com'"
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       propertyPath: m_ApplyRootMotion
@@ -1066,6 +1060,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
       insertIndex: -1
       addedObject: {fileID: 819654417}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 819654422}
   m_SourcePrefab: {fileID: 100100000, guid: f5648f7ee30c448469f6569055b0d157, type: 3}
 --- !u!1 &811595673
 GameObject:
@@ -1125,7 +1122,7 @@ MonoBehaviour:
   damage: 10
   attackCooldown: 4
   chaseRange: 10
-  stoppingDistance: 2
+  stoppingDistance: 3
   chaseSpeed: 5
 --- !u!114 &819654418
 MonoBehaviour:
@@ -1148,7 +1145,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 819654414}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 0.003
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -1157,10 +1154,33 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2
+  m_Height: 0.017
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!136 &819654422
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 819654414}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.005
+  m_Height: 0.02
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.01, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
