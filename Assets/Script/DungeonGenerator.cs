@@ -1,22 +1,29 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum RoomType { Spawn, Loot, Key, Locked, Gate, Trap }
+public enum RoomType { Spawn, Loot, Key, Locked, Gate, Trap, Empty }
 public enum Direction { Up, Down, Left, Right }
 public enum DoorState { Wall, Open, Locked }
 
 public class DungeonGenerator : MonoBehaviour
 {
     public int gridWidth = 25, gridHeight = 25;
-    public Vector2Int startPos = new Vector2Int(12, 12);
+    public Vector2Int startPos = new Vector2Int(12, 12); // Center of default 25x25 grid
     public int maxRooms = 40, roomSize = 10;
-    public GameObject[] roomPrefabs = new GameObject[6];
+    public GameObject[] roomPrefabs = new GameObject[7]; // Changed from 6 to 7 to include Empty room
     public bool useSeed = false;
     public int seed = -1;
 
+    [Header("Room Type Ratios (out of 100)")]
+    [Tooltip("Spawn is always 1, Gate is always 1")]
+    public int emptyRoomPercent = 32;  // 16/50 = 32%
+    public int lootRoomPercent = 40;   // 20/50 = 40%
+    public int trapRoomPercent = 8;    // 4/50 = 8%
+    public int keyLockedPairPercent = 16; // 8/50 = 16% (4 keys + 4 locked)
+
     private HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
     private List<Vector2Int> visitOrder = new List<Vector2Int>();
-    private Dictionary<Vector2Int, GameObject> spawnedRooms = new Dictionary<Vector2Int, GameObject>();
+    public Dictionary<Vector2Int, GameObject> spawnedRooms = new Dictionary<Vector2Int, GameObject>();
 
     void Start()
     {
@@ -31,7 +38,7 @@ public class DungeonGenerator : MonoBehaviour
         // cleanup old rooms
         Cleanup();
 
-        if (roomPrefabs == null || roomPrefabs.Length < 6)
+        if (roomPrefabs == null || roomPrefabs.Length < 7) // Changed from 6 to 7
             Debug.LogWarning("Prefabs missing");
 
         Random.InitState(useSeed && seed >= 0 ? seed : System.Environment.TickCount);
@@ -55,7 +62,12 @@ public class DungeonGenerator : MonoBehaviour
 
             GameObject inst = Instantiate(prefab, CellToWorld(cell), Quaternion.identity, transform);
             Room roomComp = inst.GetComponent<Room>();
-            if (roomComp != null) roomComp.roomType = t;
+            if (roomComp != null)
+            {
+                roomComp.roomType = t;
+                roomComp.gridPosition = cell;
+                roomComp.dungeonGenerator = this;
+            }
             spawnedRooms[cell] = inst;
         }
 
@@ -90,6 +102,7 @@ public class DungeonGenerator : MonoBehaviour
             RoomType.Locked => roomPrefabs[3],
             RoomType.Gate => roomPrefabs[4],
             RoomType.Trap => roomPrefabs[5],
+            RoomType.Empty => roomPrefabs[6],
             _ => null
         };
     }
@@ -101,57 +114,181 @@ public class DungeonGenerator : MonoBehaviour
         visitOrder.Add(pos);
 
         int attempts = 0;
-        while (visitOrder.Count < maxRooms && attempts < maxRooms * 10)
+        int stuckCounter = 0;
+        Vector2Int lastPos = pos;
+
+        while (visitOrder.Count < maxRooms && attempts < maxRooms * 20)
         {
             Vector2Int nxt = pos + RandomDirection();
+
+            // Check if next position is valid
             if (nxt.x >= 0 && nxt.x < gridWidth && nxt.y >= 0 && nxt.y < gridHeight)
             {
                 if (!occupied.Contains(nxt))
                 {
+                    // Found a new position!
                     occupied.Add(nxt);
                     visitOrder.Add(nxt);
                     pos = nxt;
+                    stuckCounter = 0;
                 }
-                else if (Random.value < 0.3f) pos = nxt;
+                else
+                {
+                    // Position already occupied, randomly move to it anyway (but don't add to visitOrder)
+                    if (Random.value < 0.3f)
+                    {
+                        pos = nxt;
+                    }
+                    stuckCounter++;
+                }
             }
+            else
+            {
+                stuckCounter++;
+            }
+
+            // If we're stuck at a boundary or surrounded, jump to a random occupied position
+            if (stuckCounter > 20 && visitOrder.Count > 1)
+            {
+                pos = visitOrder[Random.Range(0, visitOrder.Count)];
+                stuckCounter = 0;
+            }
+
             attempts++;
         }
+
+        Debug.Log($"Generated {visitOrder.Count} unique rooms out of {maxRooms} requested");
     }
 
     RoomType[] AssignRoomTypes()
     {
         int n = visitOrder.Count;
+        if (n == 0) return new RoomType[0];
+
         RoomType[] types = new RoomType[n];
-        for (int i = 0; i < n; i++) types[i] = RoomType.Loot;
-        if (n == 0) return types;
+        bool[] assigned = new bool[n];
 
-        types[0] = RoomType.Spawn;
-        int gateIndex = Mathf.Clamp(visitOrder.IndexOf(GetFurthestInRandomCardinal()), 0, n - 1);
-        if (gateIndex <= 0) gateIndex = n - 1;
-        types[gateIndex] = RoomType.Gate;
-
-        int pairCount = Mathf.Clamp(n / 12, 1, 4);
-        List<int> available = new List<int>();
-        for (int i = 1; i < n; i++) if (i != gateIndex) available.Add(i);
-        Shuffle(available);
-
-        for (int i = 0; i < pairCount && available.Count >= 2; i++)
+        // Find spawn room - closest to startPos (should be at edge/beginning)
+        int spawnIndex = 0;
+        float minDist = float.MaxValue;
+        for (int i = 0; i < visitOrder.Count; i++)
         {
-            int a = available[0], b = available[1];
-            available.RemoveRange(0, 2);
-            int keyIndex = Mathf.Min(a, b);
-            int lockIndex = Mathf.Max(a, b);
-            if (keyIndex == 0 || keyIndex == gateIndex || lockIndex == 0 || lockIndex == gateIndex) continue;
+            float dist = Vector2Int.Distance(visitOrder[i], startPos);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                spawnIndex = i;
+            }
+        }
+        types[spawnIndex] = RoomType.Spawn;
+        assigned[spawnIndex] = true;
 
-            types[keyIndex] = RoomType.Key;
-            types[lockIndex] = RoomType.Locked;
+        // Find gate room - furthest from spawn room (should be at opposite edge/end)
+        int gateIndex = 0;
+        float maxDist = float.MinValue;
+        Vector2Int spawnPos = visitOrder[spawnIndex];
+        for (int i = 0; i < visitOrder.Count; i++)
+        {
+            if (i == spawnIndex) continue;
+            float dist = Vector2Int.Distance(visitOrder[i], spawnPos);
+            if (dist > maxDist)
+            {
+                maxDist = dist;
+                gateIndex = i;
+            }
+        }
+        types[gateIndex] = RoomType.Gate;
+        assigned[gateIndex] = true;
+
+        // Calculate room counts based on percentages
+        // Spawn and Gate are already assigned (2 rooms used)
+        int remainingRooms = n - 2;
+
+        int keyLockedPairs = Mathf.RoundToInt((keyLockedPairPercent / 100f) * n / 2); // Divide by 2 because each pair = 2 rooms
+        int trapCount = Mathf.RoundToInt((trapRoomPercent / 100f) * n);
+        int emptyCount = Mathf.RoundToInt((emptyRoomPercent / 100f) * n);
+        int lootCount = Mathf.RoundToInt((lootRoomPercent / 100f) * n);
+
+        // Ensure we don't exceed available rooms
+        int specialRoomsTotal = (keyLockedPairs * 2) + trapCount + emptyCount + lootCount;
+        if (specialRoomsTotal > remainingRooms)
+        {
+            // Scale down proportionally if we have too many
+            float scale = (float)remainingRooms / specialRoomsTotal;
+            keyLockedPairs = Mathf.Max(1, Mathf.RoundToInt(keyLockedPairs * scale));
+            trapCount = Mathf.RoundToInt(trapCount * scale);
+            emptyCount = Mathf.RoundToInt(emptyCount * scale);
+            lootCount = Mathf.RoundToInt(lootCount * scale);
         }
 
-        List<int> traps = new List<int>();
-        for (int i = 1; i < n; i++) if (types[i] == RoomType.Loot) traps.Add(i);
-        Shuffle(traps);
-        int trapCount = Mathf.Clamp(n / 8, 1, 6);
-        for (int i = 0; i < trapCount && i < traps.Count; i++) types[traps[i]] = RoomType.Trap;
+        List<int> available = new List<int>();
+        for (int i = 0; i < n; i++)
+            if (!assigned[i])
+                available.Add(i);
+        Shuffle(available);
+
+        // Assign Key-Locked pairs
+        int pairsAssigned = 0;
+        for (int i = 0; i < keyLockedPairs && available.Count >= 2; i++)
+        {
+            int keyIndex = available[0];
+            int lockedIndex = available[1];
+            available.RemoveRange(0, 2);
+
+            types[keyIndex] = RoomType.Key;
+            assigned[keyIndex] = true;
+            types[lockedIndex] = RoomType.Locked;
+            assigned[lockedIndex] = true;
+            pairsAssigned++;
+        }
+
+        // Assign Trap rooms
+        int trapsAssigned = 0;
+        for (int i = 0; i < trapCount && available.Count > 0; i++)
+        {
+            int idx = available[0];
+            available.RemoveAt(0);
+            types[idx] = RoomType.Trap;
+            assigned[idx] = true;
+            trapsAssigned++;
+        }
+
+        // Assign Empty rooms
+        int emptiesAssigned = 0;
+        for (int i = 0; i < emptyCount && available.Count > 0; i++)
+        {
+            int idx = available[0];
+            available.RemoveAt(0);
+            types[idx] = RoomType.Empty;
+            assigned[idx] = true;
+            emptiesAssigned++;
+        }
+
+        // Assign Loot rooms
+        int lootsAssigned = 0;
+        for (int i = 0; i < lootCount && available.Count > 0; i++)
+        {
+            int idx = available[0];
+            available.RemoveAt(0);
+            types[idx] = RoomType.Loot;
+            assigned[idx] = true;
+            lootsAssigned++;
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            if (!assigned[i])
+            {
+                types[i] = RoomType.Loot;
+                assigned[i] = true;
+            }
+        }
+
+        // Debug: Log room type distribution
+        int[] counts = new int[7];
+        foreach (var t in types) counts[(int)t]++;
+        Debug.Log($"Room distribution ({n} total): Spawn={counts[0]}, Loot={counts[1]}, Key={counts[2]}, Locked={counts[3]}, Gate={counts[4]}, Trap={counts[5]}, Empty={counts[6]}");
+        Debug.Log($"Percentages: Empty={emptyRoomPercent}%, Loot={lootRoomPercent}%, Trap={trapRoomPercent}%, KeyLocked={keyLockedPairPercent}%");
 
         return types;
     }
@@ -189,8 +326,7 @@ public class DungeonGenerator : MonoBehaviour
     };
 
     Vector3 CellToWorld(Vector2Int cell) =>
-        new Vector3((cell.x - gridWidth / 2f) * roomSize, 0, (cell.y - gridHeight / 2f) * roomSize);
-
+        new Vector3(cell.x * roomSize, 0, cell.y * roomSize);
     Vector2Int RandomDirection() =>
         Random.Range(0, 4) switch
         {
