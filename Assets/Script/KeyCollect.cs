@@ -72,9 +72,6 @@ public class KeyCollect : MonoBehaviour
             Room room = hit.collider.GetComponentInParent<Room>();
             if (room != null)
             {
-                // Debug: Log what room type we're looking at
-                // Debug.Log($"Looking at room type: {room.roomType}");
-
                 // ONLY show prompt if room type is LOCKED
                 if (room.roomType == RoomType.Locked)
                 {
